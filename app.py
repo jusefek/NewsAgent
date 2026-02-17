@@ -52,12 +52,21 @@ class AgentState(TypedDict):
 search_template = """Your job is to search the web for related news that would be relevant to generate the article described by the user.
 NOTE: Do not write the article. Just search the web for related news if needed and then forward that news to the outliner node."""
 
-outliner_template = """Your job is to take as input a list of articles from the web along with users instruction on what article they want to write and generate an outline for the article."""
+outliner_template = """Your job is to take as input a list of articles from the web along with users instruction on what article they want to write and generate a VERY DETAILED and EXTENSIVE outline for the article. 
+Ensure the outline covers multiple angles, background context, and deep analysis.
+"""
 
-writer_template = """Your job is to write an article, do it in this format:
+writer_template = """Your job is to write a COMPREHENSIVE, DETAILED, AND LONG article. 
+Format:
 TITLE: <title> 
 BODY: <body> 
-NOTE: Do not copy the outline. You need to write the article with the info provided by the outline.
+
+Instructions:
+1. Use the provided outline to structure the article.
+2. EXPAND on every point in the outline significantly. Do not be brief.
+3. Provide context, analysis, and specific details from the search results.
+4. The final article should be in-depth and professional.
+5. Do not copy the outline directly; write a flowing narrative.
 ```"""
 
 # Funciones Auxiliares
