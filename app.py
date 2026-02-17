@@ -129,6 +129,7 @@ if st.button("🚀 Generar Artículo", type="primary"):
             with st.status("🧠 Procesando solicitud...", expanded=True) as status:
                 initial_state = {"messages": [HumanMessage(content=topic)]}
                 final_response = None
+                latest_content = None  # Variable segura para rastrear contenido
                 
                 # Stream de eventos
                 for output in app.stream(initial_state):
@@ -137,6 +138,8 @@ if st.button("🚀 Generar Artículo", type="primary"):
                         if not messages: continue
                         
                         last_msg = messages[-1]
+                        if hasattr(last_msg, 'content') and last_msg.content:
+                            latest_content = last_msg.content # Actualizamos lo último visto
                         
                         if node_name == "search":
                             if last_msg.tool_calls:
@@ -160,18 +163,14 @@ if st.button("🚀 Generar Artículo", type="primary"):
                             status.update(label="¡Completado! 🎉", state="complete", expanded=False)
                             final_response = last_msg.content
 
-                # --- FAIL-SAFE: Si no hay respuesta final, buscar lo último generado ---
+                # --- FAIL-SAFE: Si no hay respuesta final, usar lo último generado ---
                 if not final_response:
-                    # Capturar cualquier contenido del último mensaje de la IA en el estado
-                    # Nota: Streamlit no expone el estado final en el stream fácilmente sin lógica extra,
-                    # pero podemos confiar en que si 'writer' falló, tal vez 'outliner' generó algo.
-                    st.warning("⚠️ El redactor final no completó la tarea. Mostrando el último contenido disponible...")
-                    
-                    # Intentamos recuperar lo último que se haya visto en el bucle
-                    if 'last_msg' in locals() and hasattr(last_msg, 'content') and last_msg.content:
-                         final_response = last_msg.content
-                         st.info("Mostrando resultado parcial (Esquema o Búsqueda).")
-
+                    if latest_content:
+                        final_response = latest_content
+                        st.warning("⚠️ El redactor final no completó la tarea, pero recuperamos el trabajo parcial.")
+                    else:
+                        st.error("❌ No se pudo generar ningún contenido.")
+                
                 if final_response:
                     st.divider()
                     st.markdown("### 📰 Resultado")
