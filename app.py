@@ -147,12 +147,14 @@ if st.button("🚀 Generar Artículo", type="primary"):
                         
                         last_msg = messages[-1]
                         # Solo guardamos contenido si es un mensaje de IA válido y tiene texto real
-                        # ignorando llamadas a herramientas (JSON) o mensajes vacíos
-                        if isinstance(last_msg, BaseMessage) and last_msg.content and not last_msg.tool_calls:
+                        # ignorando llamadas a herramientas (JSON) o mensajes vacíos.
+                        # Usamos getattr para evitar error en ToolMessage que no tiene tool_calls.
+                        has_tool_calls = getattr(last_msg, 'tool_calls', None)
+                        if isinstance(last_msg, BaseMessage) and last_msg.content and not has_tool_calls:
                             latest_content = last_msg.content
                         
                         if node_name == "search":
-                            if last_msg.tool_calls:
+                            if has_tool_calls:
                                 st.write(f"🔎 **Buscando:** {len(last_msg.tool_calls)} fuentes encontradas...")
                                 if debug_mode:
                                     st.json(last_msg.tool_calls)
