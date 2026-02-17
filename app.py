@@ -26,6 +26,8 @@ model_version = st.sidebar.selectbox(
     index=0,
     help="Si '2.5' falla, prueba con '1.5-flash'"
 )
+debug_mode = st.sidebar.checkbox("🛠️ Modo Debug", help="Muestra detalles internos de la ejecución")
+
 
 # Validación de Claves
 if not google_api_key or not tavily_api_key:
@@ -56,18 +58,15 @@ outliner_template = """Your job is to take as input a list of articles from the 
 Ensure the outline covers multiple angles, background context, and deep analysis.
 """
 
-writer_template = """Your job is to write a COMPREHENSIVE, DETAILED, AND LONG article. 
-Format:
-TITLE: <title> 
-BODY: <body> 
+writer_template = """Your job is to write a comprehensive and detailed article based on the provided outline.
 
 Instructions:
-1. Use the provided outline to structure the article.
-2. EXPAND on every point in the outline significantly. Do not be brief.
-3. Provide context, analysis, and specific details from the search results.
-4. The final article should be in-depth and professional.
-5. Do not copy the outline directly; write a flowing narrative.
-```"""
+1. Use the outline structure.
+2. Elaborate on points with available information.
+3. Maintain a professional tone.
+4. If exact details are missing, write a general overview for that section.
+5. Format clearly with Markdown (Headers, bullet points).
+"""
 
 # Funciones Auxiliares
 def create_agent(llm, tools, system_message: str):
@@ -144,21 +143,30 @@ if st.button("🚀 Generar Artículo", type="primary"):
                         
                         if node_name == "search":
                             if last_msg.tool_calls:
-                                st.write(f"� **Buscando:** {len(last_msg.tool_calls)} fuentes encontradas...")
+                                st.write(f"🔎 **Buscando:** {len(last_msg.tool_calls)} fuentes encontradas...")
+                                if debug_mode:
+                                    st.json(last_msg.tool_calls)
                             else:
                                 st.write("✅ **Búsqueda completada.**")
                                 
                         elif node_name == "tools":
                              st.write("📥 **Lectura:** Procesando contenido web...")
+                             if debug_mode:
+                                 st.expander("Resultados Raw").write(last_msg.content)
                              
                         elif node_name == "outliner":
-                            st.write("� **Esquema:** Estructurando el artículo...")
+                            st.write("📋 **Esquema:** Estructurando el artículo...")
                             with st.expander("Ver Esquema Propuesto"):
                                 st.markdown(last_msg.content)
                                 
                         elif node_name == "writer":
                             status.update(label="¡Completado! 🎉", state="complete", expanded=False)
                             final_response = last_msg.content
+
+                if debug_mode and not final_response:
+                    st.warning("⚠️ El proceso terminó pero no se capturó respuesta final.")
+                    if 'messages' in output:
+                         st.write("Último estado:", output['messages'])
 
                 if final_response:
                     st.divider()
