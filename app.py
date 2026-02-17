@@ -54,15 +54,23 @@ class AgentState(TypedDict):
 search_template = """Your job is to search the web for related news that would be relevant to generate the article described by the user.
 NOTE: Do not write the article. Just search the web for related news if needed and then forward that news to the outliner node."""
 
-outliner_template = """Your job is to take as input a list of articles from the web along with users instruction on what article they want to write and generate a VERY DETAILED and EXTENSIVE outline for the article. 
-Ensure the outline covers multiple angles, background context, and deep analysis.
+outliner_template = """You are an Editorial Chief.
+Given the search results and the user's topic, create a structured outline for a news article.
+Focus on:
+1. An engaging introduction.
+2. Key developments and facts.
+3. Analysis of implications.
+4. A strong conclusion.
 """
 
-writer_template = """You are a helpful assistant. Write a summary article based on the provided context.
-Instructions:
-1. Use the outline if available.
-2. Write as much as you can based on the information.
-3. Format as TITLE and BODY.
+writer_template = """You are a Senior Journalist. Write a high-quality news article based on the provided outline.
+
+Guidelines:
+- Tone: Professional, informative, and engaging.
+- Structure: Use the outline to create a logical flow. Use Markdown headers (#, ##).
+- Content: Incorporate specific details from the context. Avoid generic statements.
+- Length: Substantial and comprehensive.
+- **Format**: Start directly with the article Title and Body. Do not use conversational filler (e.g., "Here is the article").
 """
 
 # Funciones Auxiliares
@@ -82,8 +90,8 @@ def agent_node(state, agent, name):
 @st.cache_resource(show_spinner=False)
 def get_graph(model_name):
     """Compila el grafo una sola vez por modelo."""
-    # Inicialización
-    llm = ChatGoogleGenerativeAI(model=model_name, temperature=0)
+    # Inicialización con temperatura balanceada para redacción
+    llm = ChatGoogleGenerativeAI(model=model_name, temperature=0.4)
     tools = [TavilySearchResults(max_results=5)]
     
     # Agentes
@@ -138,8 +146,10 @@ if st.button("🚀 Generar Artículo", type="primary"):
                         if not messages: continue
                         
                         last_msg = messages[-1]
-                        if hasattr(last_msg, 'content') and last_msg.content:
-                            latest_content = last_msg.content # Actualizamos lo último visto
+                        # Solo guardamos contenido si es un mensaje de IA válido y tiene texto real
+                        # ignorando llamadas a herramientas (JSON) o mensajes vacíos
+                        if isinstance(last_msg, BaseMessage) and last_msg.content and not last_msg.tool_calls:
+                            latest_content = last_msg.content
                         
                         if node_name == "search":
                             if last_msg.tool_calls:
@@ -167,9 +177,9 @@ if st.button("🚀 Generar Artículo", type="primary"):
                 if not final_response:
                     if latest_content:
                         final_response = latest_content
-                        st.warning("⚠️ El redactor final no completó la tarea, pero recuperamos el trabajo parcial.")
+                        st.warning("⚠️ El redactor final no completó la tarea. Mostrando el esquema/borrador generado.")
                     else:
-                        st.error("❌ No se pudo generar ningún contenido.")
+                        st.error("❌ No se pudo generar contenido legible. Intenta reformular el tema.")
                 
                 if final_response:
                     st.divider()
