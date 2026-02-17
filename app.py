@@ -58,14 +58,11 @@ outliner_template = """Your job is to take as input a list of articles from the 
 Ensure the outline covers multiple angles, background context, and deep analysis.
 """
 
-writer_template = """Your job is to write a comprehensive and detailed article based on the provided outline.
-
+writer_template = """You are a helpful assistant. Write a summary article based on the provided context.
 Instructions:
-1. Use the outline structure.
-2. Elaborate on points with available information.
-3. Maintain a professional tone.
-4. If exact details are missing, write a general overview for that section.
-5. Format clearly with Markdown (Headers, bullet points).
+1. Use the outline if available.
+2. Write as much as you can based on the information.
+3. Format as TITLE and BODY.
 """
 
 # Funciones Auxiliares
@@ -163,14 +160,21 @@ if st.button("🚀 Generar Artículo", type="primary"):
                             status.update(label="¡Completado! 🎉", state="complete", expanded=False)
                             final_response = last_msg.content
 
-                if debug_mode and not final_response:
-                    st.warning("⚠️ El proceso terminó pero no se capturó respuesta final.")
-                    if 'messages' in output:
-                         st.write("Último estado:", output['messages'])
+                # --- FAIL-SAFE: Si no hay respuesta final, buscar lo último generado ---
+                if not final_response:
+                    # Capturar cualquier contenido del último mensaje de la IA en el estado
+                    # Nota: Streamlit no expone el estado final en el stream fácilmente sin lógica extra,
+                    # pero podemos confiar en que si 'writer' falló, tal vez 'outliner' generó algo.
+                    st.warning("⚠️ El redactor final no completó la tarea. Mostrando el último contenido disponible...")
+                    
+                    # Intentamos recuperar lo último que se haya visto en el bucle
+                    if 'last_msg' in locals() and hasattr(last_msg, 'content') and last_msg.content:
+                         final_response = last_msg.content
+                         st.info("Mostrando resultado parcial (Esquema o Búsqueda).")
 
                 if final_response:
                     st.divider()
-                    st.markdown("### 📰 Artículo Generado")
+                    st.markdown("### 📰 Resultado")
                     st.markdown(final_response)
                     
                     # Opción de descarga
