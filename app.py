@@ -22,9 +22,9 @@ tavily_api_key = st.sidebar.text_input("TAVILY_API_KEY", type="password", help="
 # Selector de Modelo (Crítico para compatibilidad)
 model_version = st.sidebar.selectbox(
     "Modelo Gemini",
-    ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"],
+    ["gemini-2.5-flash"],
     index=0,
-    help="Si '2.5' falla, prueba con '1.5-flash'"
+    help="Usando la versión más reciente de Gemini."
 )
 debug_mode = st.sidebar.checkbox("🛠️ Modo Debug", help="Muestra detalles internos de la ejecución")
 
