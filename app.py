@@ -126,17 +126,23 @@ def get_graph(model_name):
         last_message = state['messages'][-1]
         return "tools" if last_message.tool_calls else "outliner"
 
+    # Nodo Trigger para asegurar que el Writer escriba
+    def trigger_writer(state):
+        return {'messages': [HumanMessage(content="Here is the outline. Please write the full article now based on it.")]}
+
     # Construcción
     workflow = StateGraph(AgentState)
     workflow.add_node("search", search_node)
     workflow.add_node("tools", tool_node)
     workflow.add_node("outliner", outliner_node)
     workflow.add_node("writer", writer_node)
+    workflow.add_node("trigger_writer", trigger_writer)
 
     workflow.set_entry_point("search")
     workflow.add_conditional_edges("search", should_search)
     workflow.add_edge("tools", "search")
-    workflow.add_edge("outliner", "writer")
+    workflow.add_edge("outliner", "trigger_writer")
+    workflow.add_edge("trigger_writer", "writer")
     workflow.add_edge("writer", END)
     
     return workflow.compile()
@@ -166,7 +172,9 @@ if st.button("🚀 Generar Artículo", type="primary"):
                         # ignorando llamadas a herramientas (JSON) o mensajes vacíos.
                         # Usamos getattr para evitar error en ToolMessage que no tiene tool_calls.
                         has_tool_calls = getattr(last_msg, 'tool_calls', None)
-                        if isinstance(last_msg, BaseMessage) and last_msg.content and not has_tool_calls:
+                        
+                        # Only track content from specific nodes to avoid capturing the trigger message
+                        if node_name in ["search", "outliner", "writer"] and isinstance(last_msg, BaseMessage) and last_msg.content and not has_tool_calls:
                             latest_content = get_clean_content(last_msg.content)
                             if debug_mode:
                                 st.write(f"🐛 **Debug:** Content updated from {node_name}. Len: {len(latest_content)}")
