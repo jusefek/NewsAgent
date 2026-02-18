@@ -26,7 +26,7 @@ model_version = st.sidebar.selectbox(
     index=0,
     help="Usando la versión más reciente de Gemini."
 )
-debug_mode = st.sidebar.checkbox("🛠️ Modo Debug", help="Muestra detalles internos de la ejecución")
+
 
 
 # Validación de Claves
@@ -176,22 +176,20 @@ if st.button("🚀 Generar Artículo", type="primary"):
                         # Only track content from specific nodes to avoid capturing the trigger message
                         if node_name in ["search", "outliner", "writer"] and isinstance(last_msg, BaseMessage) and last_msg.content and not has_tool_calls:
                             latest_content = get_clean_content(last_msg.content)
-                            if debug_mode:
-                                st.write(f"🐛 **Debug:** Content updated from {node_name}. Len: {len(latest_content)}")
-                        elif debug_mode:
-                            st.write(f"🐛 **Debug:** Skipped update for {node_name}. Content type: {type(last_msg.content)}. Has tools: {has_tool_calls}")
+                            latest_content = get_clean_content(last_msg.content)
+                        
                         
                         if node_name == "search":
                             if has_tool_calls:
                                 st.write(f"🔎 **Buscando:** {len(last_msg.tool_calls)} fuentes encontradas...")
-                                if debug_mode:
+                                if False: # debug_mode removed
                                     st.json(last_msg.tool_calls)
                             else:
                                 st.write("✅ **Búsqueda completada.**")
                                 
                         elif node_name == "tools":
                              st.write("📥 **Lectura:** Procesando contenido web...")
-                             if debug_mode:
+                             if False: # debug_mode removed
                                  st.expander("Resultados Raw").write(get_clean_content(last_msg.content))
                              
                         elif node_name == "outliner":
