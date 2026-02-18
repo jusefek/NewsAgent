@@ -70,8 +70,23 @@ Guidelines:
 - Structure: Use the outline to create a logical flow. Use Markdown headers (#, ##).
 - Content: Incorporate specific details from the context. Avoid generic statements.
 - Length: Substantial and comprehensive.
-- **Format**: Start directly with the article Title and Body. Do not use conversational filler (e.g., "Here is the article").
+
+        - **Format**: Start directly with the article Title and Body. Do not use conversational filler (e.g., "Here is the article").
 """
+
+# Helper to clean content
+def get_clean_content(content):
+    """Extracts text from message content which can be a string or a list of blocks."""
+    if isinstance(content, str):
+        return content
+    elif isinstance(content, list):
+        # Extract text from list of blocks (e.g. [{'type': 'text', 'text': '...'}])
+        return "\n".join(
+            [block.get('text', '') for block in content 
+                if isinstance(block, dict) and block.get('type') == 'text']
+        )
+    return str(content)
+
 
 # Funciones Auxiliares
 def create_agent(llm, tools, system_message: str):
@@ -151,7 +166,7 @@ if st.button("🚀 Generar Artículo", type="primary"):
                         # Usamos getattr para evitar error en ToolMessage que no tiene tool_calls.
                         has_tool_calls = getattr(last_msg, 'tool_calls', None)
                         if isinstance(last_msg, BaseMessage) and last_msg.content and not has_tool_calls:
-                            latest_content = last_msg.content
+                            latest_content = get_clean_content(last_msg.content)
                         
                         if node_name == "search":
                             if has_tool_calls:
@@ -164,16 +179,16 @@ if st.button("🚀 Generar Artículo", type="primary"):
                         elif node_name == "tools":
                              st.write("📥 **Lectura:** Procesando contenido web...")
                              if debug_mode:
-                                 st.expander("Resultados Raw").write(last_msg.content)
+                                 st.expander("Resultados Raw").write(get_clean_content(last_msg.content))
                              
                         elif node_name == "outliner":
                             st.write("📋 **Esquema:** Estructurando el artículo...")
                             with st.expander("Ver Esquema Propuesto"):
-                                st.markdown(last_msg.content)
+                                st.markdown(get_clean_content(last_msg.content))
                                 
                         elif node_name == "writer":
                             status.update(label="¡Completado! 🎉", state="complete", expanded=False)
-                            final_response = last_msg.content
+                            final_response = get_clean_content(last_msg.content)
 
                 # --- FAIL-SAFE: Si no hay respuesta final, usar lo último generado ---
                 if not final_response:
