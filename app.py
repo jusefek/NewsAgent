@@ -72,6 +72,7 @@ Guidelines:
 - Length: Substantial and comprehensive.
 
         - **Format**: Start directly with the article Title and Body. Do not use conversational filler (e.g., "Here is the article").
+        - **IMPORTANT**: If the provided context is insufficient, do NOT return an empty string. Instead, write a short summary based on what you have, or state clearly that information is limited.
 """
 
 # Helper to clean content
@@ -167,6 +168,10 @@ if st.button("🚀 Generar Artículo", type="primary"):
                         has_tool_calls = getattr(last_msg, 'tool_calls', None)
                         if isinstance(last_msg, BaseMessage) and last_msg.content and not has_tool_calls:
                             latest_content = get_clean_content(last_msg.content)
+                            if debug_mode:
+                                st.write(f"🐛 **Debug:** Content updated from {node_name}. Len: {len(latest_content)}")
+                        elif debug_mode:
+                            st.write(f"🐛 **Debug:** Skipped update for {node_name}. Content type: {type(last_msg.content)}. Has tools: {has_tool_calls}")
                         
                         if node_name == "search":
                             if has_tool_calls:
